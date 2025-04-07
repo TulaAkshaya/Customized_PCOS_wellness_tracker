@@ -5,7 +5,7 @@ import urllib.parse
 
 # --- App Config ---
 st.set_page_config(page_title="PCOS Wellness Tracker", layout="centered")
-st.title("🌸 PCOS Daily Glow-Up Tracker")
+st.title(" PCOS Daily Glow-Up Tracker")
 
 # --- Date & Init ---
 today = datetime.date.today()
@@ -57,19 +57,29 @@ st.session_state.completed_days[str(today)] = len(completed)
 st.success(f"You’ve completed {len(completed)} out of {len(habits)} habits today! 💪")
 
 # --- Mood Tracker ---
-st.markdown("### 💖 How are you feeling today?")
+st.markdown("### 🫶 How are you feeling today?")
 mood = st.radio("Select your mood:", ["😊 Happy", "😐 Neutral", "😔 Low"], key=str(today))
 st.session_state.mood_log[str(today)] = mood
+
+# --- Encouraging Tips Based on Mood ---
+st.markdown("### Encouraging Tip of the Day")
+if mood == "😊 Happy":
+    st.success("You’re glowing! Keep up the amazing work and remember to celebrate the small wins ✨")
+elif mood == "😐 Neutral":
+    st.info("You’re doing your best and that’s enough today. Maybe a walk or warm tea will lift your vibe ☁️💗")
+elif mood == "😔 Low":
+    st.warning("It’s okay to feel this way. Be gentle with yourself. You are healing — one step at a time 🫶")
 
 # --- Weekly Progress Tracker ---
 st.markdown("---")
 st.markdown("### 📊 Weekly Progress Tracker")
 
-week_ago = today - datetime.timedelta(days=6)
-day_labels = [(week_ago + datetime.timedelta(days=i)).strftime('%a') for i in range(7)]
+week_dates = [today - datetime.timedelta(days=(today.weekday() - i) % 7) for i in range(7)]
+week_dates.sort()
+day_labels = [date.strftime('%A (%d %b)') for date in week_dates]
 progress_data = [
-    st.session_state.completed_days.get(str(week_ago + datetime.timedelta(days=i)), 0)
-    for i in range(7)
+    st.session_state.completed_days.get(str(date), 0)
+    for date in week_dates
 ]
 
 # Create DataFrame for bar chart
