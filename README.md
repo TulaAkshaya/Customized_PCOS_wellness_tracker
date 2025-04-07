@@ -1,5 +1,4 @@
 # customized_PCOS_wellness_tracker
-# PCOS Daily Glow-Up Tracker
 
 A personalized wellness app to help women with PCOS track daily habits, moods, and natural hormone-balancing routines — built with Streamlit.
 
