@@ -2,19 +2,31 @@ import streamlit as st
 import pandas as pd
 import datetime
 import urllib.parse
+import os
+import random
+import webbrowser
 
 # --- App Config ---
 st.set_page_config(page_title="PCOS Wellness Tracker", layout="centered")
-st.title(" PCOS Daily Glow-Up Tracker")
+st.title("✨ PCOS Daily Glow-Up Tracker")
+
+# --- Morning Reminder ---
+current_time = datetime.datetime.now().time()
+if current_time < datetime.time(12, 0):
+    st.markdown("### 🌞 Good Morning!")
+    st.success("This morning is a fresh start. You are capable, you are healing, and your glow-up is unstoppable. ✨✨")
+
 
 # --- Date & Init ---
 today = datetime.date.today()
-st.markdown(f"#### 📅 {today.strftime('%A, %B %d, %Y')}")
+st.markdown(f"#### 🗕️ {today.strftime('%A, %B %d, %Y')}")
 
-if 'completed_days' not in st.session_state:
-    st.session_state.completed_days = {}
-if 'mood_log' not in st.session_state:
-    st.session_state.mood_log = {}
+# --- Load or Init Data ---
+data_file = "data.csv"
+if os.path.exists(data_file):
+    df_all = pd.read_csv(data_file)
+else:
+    df_all = pd.DataFrame(columns=["date", "completed_habits", "mood"])
 
 # --- Daily Habits ---
 st.markdown("### ✅ Daily Habits")
@@ -50,41 +62,115 @@ for habit, time_str in habits.items():
             f"&dates={start_str}/{end_str}"
             f"&details=Gentle+PCOS+Reminder"
         )
-        st.markdown(f"[📆 Add to Google Calendar]({event_url})")
-
-# Save today's completion
-st.session_state.completed_days[str(today)] = len(completed)
-st.success(f"You’ve completed {len(completed)} out of {len(habits)} habits today! 💪")
+        st.markdown(f"[🗖️ Add to Google Calendar]({event_url})")
 
 # --- Mood Tracker ---
-st.markdown("### 🫶 How are you feeling today?")
+st.markdown("### ✨ How are you feeling today? ✨")
 mood = st.radio("Select your mood:", ["😊 Happy", "😐 Neutral", "😔 Low"], key=str(today))
-st.session_state.mood_log[str(today)] = mood
+
+# --- Save to file ---
+existing_row = df_all[df_all["date"] == str(today)]
+if existing_row.empty:
+    new_row = pd.DataFrame({
+        "date": [str(today)],
+        "completed_habits": [len(completed)],
+        "mood": [mood]
+    })
+    df_all = pd.concat([df_all, new_row], ignore_index=True)
+    df_all.to_csv(data_file, index=False)
+
+# --- Daily Completion Feedback ---
+st.success(f"You’ve completed {len(completed)} out of {len(habits)} habits today! 💪")
+
+# --- Daily Love Note Based on Mood ---
+st.markdown("### ✨✨ Gentle Reminder ✨✨")
+
+mood_notes = {
+    "😊 Happy": [
+        "You are radiating joy — don’t forget to soak it in! ✨",
+        "Your smile is magic — thank you for sharing it with the world. 🌟",
+        "Celebrate this glow! You’re doing amazing. ",
+        "Keep shining — happiness looks beautiful on you. ☀️",
+        "You’re on the right path, and it shows! 💫",
+        "Every joyful breath is a gift — enjoy it fully. ",
+        "You're unstoppable when your heart is light. 💃"
+    ],
+    "😐 Neutral": [
+        "Even on ‘meh’ days, your presence matters. 💗",
+        "Gentle reminder: slow is still progress. 🌱",
+        "You’re allowed to just *be* — no pressure, just peace. ☁️",
+        "You’re steady, you’re trying — and that’s beautiful. 💖",
+        "Today doesn’t have to be perfect to be worth something. ",
+        "Breathe deep. You're safe here. 🌿",
+        "Balance isn’t boring — it’s powerful. ⚖️"
+    ],
+    "😔 Low": [
+        "You’re not alone. This feeling will pass.",
+        "Be soft with yourself today. You’re still healing. 💜",
+        "You don’t have to be strong all the time. Just breathe. 🫲",
+        "Even broken hearts keep beating. You’re doing beautifully. ❤️",
+        "Rest is not weakness. It’s sacred.",
+        "You’re allowed to cry. You’re allowed to fall apart. Still, you’re worthy. ",
+    ]
+}
+
+weekday_idx = today.weekday()
+selected_note = mood_notes.get(mood, ["You are enough."])[weekday_idx % 7]
+st.success(selected_note)
 
 # --- Encouraging Tips Based on Mood ---
-st.markdown("### Encouraging Tip of the Day")
+st.markdown("###  Encouraging Tip of the Day")
 if mood == "😊 Happy":
     st.success("You’re glowing! Keep up the amazing work and remember to celebrate the small wins ✨")
 elif mood == "😐 Neutral":
-    st.info("You’re doing your best and that’s enough today. Maybe a walk or warm tea will lift your vibe ☁️💗")
+    st.info("You’re doing your best and that’s enough today. Maybe a walk or warm tea will lift your vibe 💗")
 elif mood == "😔 Low":
-    st.warning("It’s okay to feel this way. Be gentle with yourself. You are healing — one step at a time 🫶")
+    st.warning("It’s okay to feel this way. Be gentle with yourself. You are healing — one step at a time ")
+
+# --- Mood-Based Random Spotify Music ---
+st.markdown("### 🎵 Mood Booster: Your Vibe Song")
+
+spotify_playlists = {
+    "😊 Happy": [
+        "https://open.spotify.com/playlist/37i9dQZF1DXdPec7aLTmlC",
+        "https://open.spotify.com/playlist/37i9dQZF1DWU0ScTcjJBdj",
+        "https://open.spotify.com/playlist/37i9dQZF1DX0UrRvztWcAU"
+    ],
+    "😐 Neutral": [
+        "https://open.spotify.com/playlist/37i9dQZF1DWUvHZA1zLcjW",
+        "https://open.spotify.com/playlist/37i9dQZF1DX4WYpdgoIcn6",
+        "https://open.spotify.com/playlist/37i9dQZF1DWXLeA8Omikj7"
+    ],
+    "😔 Low": [
+        "https://open.spotify.com/playlist/37i9dQZF1DWVV27DiNWxkR",
+        "https://open.spotify.com/playlist/37i9dQZF1DX3rxVfibe1L0",
+        "https://open.spotify.com/playlist/37i9dQZF1DWX83CujKHHOn"
+    ]
+}
+
+if mood in spotify_playlists:
+    playlist_url = random.choice(spotify_playlists[mood])
+    st.markdown(f"[Click here to play a handpicked playlist 🎧]({playlist_url})")
 
 # --- Weekly Progress Tracker ---
 st.markdown("---")
 st.markdown("### 📊 Weekly Progress Tracker")
 
-week_dates = [today - datetime.timedelta(days=(today.weekday() - i) % 7) for i in range(7)]
-week_dates.sort()
-day_labels = [date.strftime('%A (%d %b)') for date in week_dates]
-progress_data = [
-    st.session_state.completed_days.get(str(date), 0)
-    for date in week_dates
-]
+week_ago = today - datetime.timedelta(days=6)
+week_dates = [week_ago + datetime.timedelta(days=i) for i in range(7)]
+df_all["date"] = pd.to_datetime(df_all["date"])
+week_df = df_all[df_all["date"].isin(week_dates)]
+week_df = week_df.sort_values("date")
 
-# Create DataFrame for bar chart
-df = pd.DataFrame({"Day": day_labels, "Habits Done": progress_data})
-st.bar_chart(df.set_index("Day"))
+chart_df = pd.DataFrame({
+    "Day": week_df["date"].dt.strftime("%A (%d %b)"),
+    "Habits Done": week_df["completed_habits"]
+})
+
+if not chart_df.empty:
+    st.bar_chart(chart_df.set_index("Day"))
+else:
+    st.info("No data yet this week. Start tracking today! 🌱")
 
 # --- Tips Section ---
 st.markdown("---")
